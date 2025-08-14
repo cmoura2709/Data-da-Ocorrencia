@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de Datas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      color: #333;
+    }
+    label, input, button {
+      display: block;
+      margin: 10px 0;
+    }
+    input[type="number"] {
+      width: 100px;
+    }
+    #resultado {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Calculadora de Datas</h1>
+
+  <label for="dataNotificacao">Data da Notificação:</label>
+  <input type="date" id="dataNotificacao">
+
+  <label for="prazo">Prazo (dias corridos):</label>
+  <input type="number" id="prazo" min="1" value="10">
+
+  <button onclick="calcular()">Calcular</button>
+
+  <div id="resultado"></div>
+
+  <script>
+    async function carregarFeriados() {
+      const resposta = await fetch('Feriados.json');
+      return await resposta.json();
+    }
+
+    function adicionarDiasCorridos(data, dias, feriados) {
+      let resultado = new Date(data);
+      let adicionados = 0;
+
+      while (adicionados < dias) {
+        resultado.setDate(resultado.getDate() + 1);
+        adicionados++;
+      }
+
+      while (
+        resultado.getDay() === 0 ||
+        resultado.getDay() === 6 ||
+        feriados.includes(resultado.toISOString().split('T')[0])
+      ) {
+        resultado.setDate(resultado.getDate() + 1);
+      }
+
+      return resultado;
+    }
+
+    async function calcular() {
+      const dataInput = document.getElementById('dataNotificacao').value;
+      const prazoInput = parseInt(document.getElementById('prazo').value);
+
+      if (!dataInput || isNaN(prazoInput) || prazoInput < 1) {
+        alert('Por favor, preencha todos os campos corretamente.');
+        return;
+      }
+
+      const feriados = await carregarFeriados();
+      const dataInicial = new Date(dataInput);
+      let primeiroDiaUtil = new Date(dataInicial);
+
+      while (
+        primeiroDiaUtil.getDay() === 0 ||
+        primeiroDiaUtil.getDay() === 6 ||
+        feriados.includes(primeiroDiaUtil.toISOString().split('T')[0])
+      ) {
+        primeiroDiaUtil.setDate(primeiroDiaUtil.getDate() + 1);
+      }
+
+      const dataFinal = adicionarDiasCorridos(primeiroDiaUtil, prazoInput, feriados);
+
+      const dataOcorrencia = new Date(dataFinal);
+      dataOcorrencia.setDate(dataFinal.getDate() + 1);
+
+      document.getElementById('resultado').innerHTML = `
+        <strong>Primeiro dia útil:</strong> ${primeiroDiaUtil.toLocaleDateString()}<br>
+        <strong>Data final (prazo):</strong> ${dataFinal.toLocaleDateString()}<br>
+        <strong>Data da ocorrência:</strong> ${dataOcorrencia.toLocaleDateString()}
+      `;
+    }
+  </script>
+</body>
+</html>
