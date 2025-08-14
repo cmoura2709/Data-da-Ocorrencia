@@ -1,115 +1,90 @@
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Calculadora de Datas</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
+      margin: 20px;
     }
-    h1 { color: #333; }
-    label, input, button { display: block; margin: 10px 0; }
-    input[type="number"] { width: 120px; }
-    #resultado {
-      margin-top: 20px; padding: 10px;
-      background-color: #e0e0e0; border-radius: 5px;
+    label, input, button {
+      display: block;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <h1>Calculadora de Datas</h1>
+  <label for="notificacao">Data da Notificação:</label>
+  <input type="date" id="notificacao">
 
-  <label for="dataNotificacao">Data da Notificação:</label>
-  <input type="date" id="dataNotificacao" />
+  <label for="prazo">Prazo (em dias):</label>
+  <input type="number" id="prazo">
 
-  <label for="prazo">Prazo (dias corridos):</label>
-  <input type="number" id="prazo" min="1" value="10" />
+  <button onclick="calcular()">Calcular Data Final</button>
 
-  <button onclick="calcular()">Calcular</button>
-
-  <div id="resultado"></div>
+  <p id="resultado"></p>
 
   <script>
-    // ---------- Utilidades de data (sem risco de fuso horário) ----------
-    function parseLocalDate(yyyyMmDd) {
-      const [y, m, d] = yyyyMmDd.split("-").map(Number);
-      return new Date(y, m - 1, d);
-    }
-    function ymd(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
-    function addDays(date, days) {
-      const dt = new Date(date);
-      dt.setDate(dt.getDate() + days);
-      return dt;
-    }
-    function isWeekend(date) {
-      const dow = date.getDay(); // 0=Dom, 6=Sáb
-      return dow === 0 || dow === 6;
-    }
-    function isHoliday(date, feriados) {
-      return feriados.includes(ymd(date));
-    }
-    function isBusinessDay(date, feriados) {
-      return !isWeekend(date) && !isHoliday(date, feriados);
-    }
-    function nextBusinessDay(date, feriados) {
-      const dt = new Date(date);
-      while (!isBusinessDay(dt, feriados)) {
-        dt.setDate(dt.getDate() + 1);
-      }
-      return dt;
+    let feriados = [];
+
+    // Função para converter "DD/MM/YYYY" em Date
+    function parseDataBR(dataStr) {
+      const [dia, mes, ano] = dataStr.split("/");
+      return new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
     }
 
-    // ---------- Feriados ----------
-    async function carregarFeriados() {
-      try {
-        const resp = await fetch("Feriados.json", { cache: "no-store" });
-        if (!resp.ok) throw new Error("não encontrado");
-        return await resp.json(); // array de strings "YYYY-MM-DD"
-      } catch (e) {
-        // Se não houver arquivo, segue sem feriados (só pula fins de semana)
-        return [];
-      }
+    // Carrega os feriados do JSON
+    fetch('Feriados.json')
+      .then(response => response.json())
+      .then(data => {
+        feriados = data.map(f => parseDataBR(f));
+      })
+      .catch(error => console.error("Erro ao carregar Feriados.json:", error));
+
+    // Função para verificar se é dia útil
+    function ehDiaUtil(data) {
+      const diaSemana = data.getDay(); // 0 = domingo, 6 = sábado
+      const dataFormatada = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+
+      if (diaSemana === 0 || diaSemana === 6) return false; // Fim de semana
+      if (feriados.some(f => f.getTime() === dataFormatada.getTime())) return false; // Feriado
+
+      return true;
     }
 
-    // ---------- Regras de cálculo ----------
-    async function calcular() {
-      const dataStr = document.getElementById("dataNotificacao").value;
-      const prazo = parseInt(document.getElementById("prazo").value, 10);
+    function calcular() {
+      const notificacaoInput = document.getElementById("notificacao").value;
+      const prazo = parseInt(document.getElementById("prazo").value);
+      const resultado = document.getElementById("resultado");
 
-      if (!dataStr || Number.isNaN(prazo) || prazo < 1) {
-        alert("Por favor, preencha a data e um prazo válido (≥ 1).");
+      if (!notificacaoInput || isNaN(prazo)) {
+        resultado.textContent = "Preencha todos os campos corretamente.";
         return;
       }
 
-      const feriados = await carregarFeriados();
-      const dataNotificacao = parseLocalDate(dataStr);
+      let data = new Date(notificacaoInput);
 
-      // 1) Início da contagem = (notificação + 1 dia) ajustado para o próximo dia útil
-      const inicioCandidato = addDays(dataNotificacao, 1);
-      const inicioContagem = nextBusinessDay(inicioCandidato, feriados);
+      // Começa contando do dia seguinte útil
+      do {
+        data.setDate(data.getDate() + 1);
+      } while (!ehDiaUtil(data));
 
-      // 2) Data final (dias corridos a partir do início, contando o início como dia 1)
-      //    => soma (prazo - 1) e, se não for útil, empurra para o próximo útil
-      const finalCandidato = addDays(inicioContagem, prazo - 1);
-      const dataFinal = nextBusinessDay(finalCandidato, feriados);
+      // Conta o prazo, pulando dias não úteis
+      let diasRestantes = prazo;
+      while (diasRestantes > 0) {
+        data.setDate(data.getDate() + 1);
+        if (ehDiaUtil(data)) {
+          diasRestantes--;
+        }
+      }
 
-      // 3) Data da ocorrência = dia seguinte corrido à data final
-      const dataOcorrencia = addDays(dataFinal, 1);
+      // Ajusta caso o último dia não seja útil
+      while (!ehDiaUtil(data)) {
+        data.setDate(data.getDate() + 1);
+      }
 
-      const fmt = (d) => d.toLocaleDateString("pt-BR");
-      document.getElementById("resultado").innerHTML = `
-        <strong>Início da contagem:</strong> ${fmt(inicioContagem)}<br>
-        <strong>Data final para apresentação:</strong> ${fmt(dataFinal)}<br>
-        <strong>Data da ocorrência:</strong> ${fmt(dataOcorrencia)}
-      `;
+      resultado.textContent = `Data final: ${data.toLocaleDateString("pt-BR")}`;
     }
   </script>
 </body>
