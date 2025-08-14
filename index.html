@@ -1,7 +1,6 @@
-<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Calculadora de Datas</title>
   <style>
     body {
@@ -11,21 +10,12 @@
       max-width: 600px;
       margin: auto;
     }
-    h1 {
-      color: #333;
-    }
-    label, input, button {
-      display: block;
-      margin: 10px 0;
-    }
-    input[type="number"] {
-      width: 100px;
-    }
+    h1 { color: #333; }
+    label, input, button { display: block; margin: 10px 0; }
+    input[type="number"] { width: 120px; }
     #resultado {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #e0e0e0;
-      border-radius: 5px;
+      margin-top: 20px; padding: 10px;
+      background-color: #e0e0e0; border-radius: 5px;
     }
   </style>
 </head>
@@ -33,71 +23,92 @@
   <h1>Calculadora de Datas</h1>
 
   <label for="dataNotificacao">Data da Notificação:</label>
-  <input type="date" id="dataNotificacao">
+  <input type="date" id="dataNotificacao" />
 
   <label for="prazo">Prazo (dias corridos):</label>
-  <input type="number" id="prazo" min="1" value="10">
+  <input type="number" id="prazo" min="1" value="10" />
 
   <button onclick="calcular()">Calcular</button>
 
   <div id="resultado"></div>
 
   <script>
+    // ---------- Utilidades de data (sem risco de fuso horário) ----------
+    function parseLocalDate(yyyyMmDd) {
+      const [y, m, d] = yyyyMmDd.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function ymd(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+    function addDays(date, days) {
+      const dt = new Date(date);
+      dt.setDate(dt.getDate() + days);
+      return dt;
+    }
+    function isWeekend(date) {
+      const dow = date.getDay(); // 0=Dom, 6=Sáb
+      return dow === 0 || dow === 6;
+    }
+    function isHoliday(date, feriados) {
+      return feriados.includes(ymd(date));
+    }
+    function isBusinessDay(date, feriados) {
+      return !isWeekend(date) && !isHoliday(date, feriados);
+    }
+    function nextBusinessDay(date, feriados) {
+      const dt = new Date(date);
+      while (!isBusinessDay(dt, feriados)) {
+        dt.setDate(dt.getDate() + 1);
+      }
+      return dt;
+    }
+
+    // ---------- Feriados ----------
     async function carregarFeriados() {
-      const resposta = await fetch('Feriados.json');
-      return await resposta.json();
+      try {
+        const resp = await fetch("Feriados.json", { cache: "no-store" });
+        if (!resp.ok) throw new Error("não encontrado");
+        return await resp.json(); // array de strings "YYYY-MM-DD"
+      } catch (e) {
+        // Se não houver arquivo, segue sem feriados (só pula fins de semana)
+        return [];
+      }
     }
 
-    function adicionarDiasCorridos(data, dias, feriados) {
-      let resultado = new Date(data);
-      let adicionados = 0;
-
-      while (adicionados < dias) {
-        resultado.setDate(resultado.getDate() + 1);
-        adicionados++;
-      }
-
-      while (
-        resultado.getDay() === 0 ||
-        resultado.getDay() === 6 ||
-        feriados.includes(resultado.toISOString().split('T')[0])
-      ) {
-        resultado.setDate(resultado.getDate() + 1);
-      }
-
-      return resultado;
-    }
-
+    // ---------- Regras de cálculo ----------
     async function calcular() {
-      const dataInput = document.getElementById('dataNotificacao').value;
-      const prazoInput = parseInt(document.getElementById('prazo').value);
+      const dataStr = document.getElementById("dataNotificacao").value;
+      const prazo = parseInt(document.getElementById("prazo").value, 10);
 
-      if (!dataInput || isNaN(prazoInput) || prazoInput < 1) {
-        alert('Por favor, preencha todos os campos corretamente.');
+      if (!dataStr || Number.isNaN(prazo) || prazo < 1) {
+        alert("Por favor, preencha a data e um prazo válido (≥ 1).");
         return;
       }
 
       const feriados = await carregarFeriados();
-      const dataInicial = new Date(dataInput);
-      let primeiroDiaUtil = new Date(dataInicial);
+      const dataNotificacao = parseLocalDate(dataStr);
 
-      while (
-        primeiroDiaUtil.getDay() === 0 ||
-        primeiroDiaUtil.getDay() === 6 ||
-        feriados.includes(primeiroDiaUtil.toISOString().split('T')[0])
-      ) {
-        primeiroDiaUtil.setDate(primeiroDiaUtil.getDate() + 1);
-      }
+      // 1) Início da contagem = (notificação + 1 dia) ajustado para o próximo dia útil
+      const inicioCandidato = addDays(dataNotificacao, 1);
+      const inicioContagem = nextBusinessDay(inicioCandidato, feriados);
 
-      const dataFinal = adicionarDiasCorridos(primeiroDiaUtil, prazoInput, feriados);
+      // 2) Data final (dias corridos a partir do início, contando o início como dia 1)
+      //    => soma (prazo - 1) e, se não for útil, empurra para o próximo útil
+      const finalCandidato = addDays(inicioContagem, prazo - 1);
+      const dataFinal = nextBusinessDay(finalCandidato, feriados);
 
-      const dataOcorrencia = new Date(dataFinal);
-      dataOcorrencia.setDate(dataFinal.getDate() + 1);
+      // 3) Data da ocorrência = dia seguinte corrido à data final
+      const dataOcorrencia = addDays(dataFinal, 1);
 
-      document.getElementById('resultado').innerHTML = `
-        <strong>Primeiro dia útil:</strong> ${primeiroDiaUtil.toLocaleDateString()}<br>
-        <strong>Data final (prazo):</strong> ${dataFinal.toLocaleDateString()}<br>
-        <strong>Data da ocorrência:</strong> ${dataOcorrencia.toLocaleDateString()}
+      const fmt = (d) => d.toLocaleDateString("pt-BR");
+      document.getElementById("resultado").innerHTML = `
+        <strong>Início da contagem:</strong> ${fmt(inicioContagem)}<br>
+        <strong>Data final para apresentação:</strong> ${fmt(dataFinal)}<br>
+        <strong>Data da ocorrência:</strong> ${fmt(dataOcorrencia)}
       `;
     }
   </script>
