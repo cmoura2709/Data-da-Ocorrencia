@@ -11,9 +11,6 @@
       display: block;
       margin-bottom: 10px;
     }
-    p {
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
@@ -24,21 +21,20 @@
   <label for="prazo">Prazo (em dias):</label>
   <input type="number" id="prazo">
 
-  <button onclick="calcular()">Calcular</button>
+  <button onclick="calcular()">Calcular Data Final</button>
 
-  <p id="inicio"></p>
-  <p id="final"></p>
+  <p id="resultado"></p>
 
   <script>
     let feriados = [];
 
-    // Função para converter "DD/MM/YYYY" para Date
+    // Função para converter "DD/MM/YYYY" em Date
     function parseDataBR(dataStr) {
       const [dia, mes, ano] = dataStr.split("/");
       return new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
     }
 
-    // Carregar feriados
+    // Carrega os feriados do JSON
     fetch('Feriados.json')
       .then(response => response.json())
       .then(data => {
@@ -46,33 +42,35 @@
       })
       .catch(error => console.error("Erro ao carregar Feriados.json:", error));
 
+    // Função para verificar se é dia útil
     function ehDiaUtil(data) {
       const diaSemana = data.getDay(); // 0 = domingo, 6 = sábado
       const dataFormatada = new Date(data.getFullYear(), data.getMonth(), data.getDate());
-      if (diaSemana === 0 || diaSemana === 6) return false; // fim de semana
-      if (feriados.some(f => f.getTime() === dataFormatada.getTime())) return false; // feriado
+
+      if (diaSemana === 0 || diaSemana === 6) return false; // Fim de semana
+      if (feriados.some(f => f.getTime() === dataFormatada.getTime())) return false; // Feriado
+
       return true;
     }
 
     function calcular() {
       const notificacaoInput = document.getElementById("notificacao").value;
       const prazo = parseInt(document.getElementById("prazo").value);
+      const resultado = document.getElementById("resultado");
 
       if (!notificacaoInput || isNaN(prazo)) {
-        document.getElementById("inicio").textContent = "Preencha todos os campos corretamente.";
-        document.getElementById("final").textContent = "";
+        resultado.textContent = "Preencha todos os campos corretamente.";
         return;
       }
 
       let data = new Date(notificacaoInput);
 
-      // Início da contagem (primeiro dia útil após a notificação)
+      // Começa contando do dia seguinte útil
       do {
         data.setDate(data.getDate() + 1);
       } while (!ehDiaUtil(data));
-      const dataInicio = new Date(data); // salvar para exibir depois
 
-      // Contagem do prazo
+      // Conta o prazo, pulando dias não úteis
       let diasRestantes = prazo;
       while (diasRestantes > 0) {
         data.setDate(data.getDate() + 1);
@@ -81,20 +79,13 @@
         }
       }
 
-      // Ajustar caso o prazo final caia em dia não útil
+      // Ajusta caso o último dia não seja útil
       while (!ehDiaUtil(data)) {
         data.setDate(data.getDate() + 1);
       }
-      const dataFinal = new Date(data);
 
-      // Exibir resultados
-      document.getElementById("inicio").textContent =
-        `Data de Início da Contagem: ${dataInicio.toLocaleDateString("pt-BR")}`;
-      document.getElementById("final").textContent =
-        `Data Final para Apresentação da Resposta: ${dataFinal.toLocaleDateString("pt-BR")}`;
+      resultado.textContent = `Data final: ${data.toLocaleDateString("pt-BR")}`;
     }
   </script>
 </body>
 </html>
-
-
