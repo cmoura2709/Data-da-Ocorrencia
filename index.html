@@ -1,82 +1,138 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data da Ocorrência</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<title>Data da Ocorrência</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #1a4f8b, #87cefa);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .container {
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        width: 400px;
+        text-align: center;
+    }
+    header {
+        background-image: url('https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80');
+        background-size: cover;
+        background-position: center;
+        padding: 30px;
+        border-radius: 15px 15px 0 0;
+        color: white;
+    }
+    header h1 {
+        margin: 0;
+        font-size: 26px;
+    }
+    header h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: normal;
+    }
+    label {
+        font-weight: bold;
+        display: block;
+        margin-top: 15px;
+    }
+    input {
+        padding: 8px;
+        width: calc(100% - 20px);
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        background-color: #1a4f8b;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        margin-top: 15px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    button:hover {
+        background-color: #163e6d;
+    }
+    .result {
+        margin-top: 20px;
+        text-align: left;
+    }
+    .result strong {
+        display: block;
+        margin-top: 5px;
+    }
+</style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg">
-    <h1 class="text-3xl font-bold text-gray-800 text-center">Data da Ocorrência</h1>
-    <p class="text-lg text-gray-500 mb-6 text-center">(Recusa de Informações)</p>
-
-    <div class="mb-4">
-      <label class="block text-gray-700 font-medium">Data da Notificação:</label>
-      <input type="date" id="dataNotificacao" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+<body>
+    <div class="container">
+        <header>
+            <h1>Data da Ocorrência</h1>
+            <h2>(Recusa de Informações)</h2>
+        </header>
+        <label for="data">Data da Notificação:</label>
+        <input type="date" id="data">
+        <label for="prazo">Prazo (em dias):</label>
+        <input type="number" id="prazo">
+        <button onclick="calcular()">Calcular</button>
+        <div class="result" id="resultado"></div>
     </div>
 
-    <div class="mb-4">
-      <label class="block text-gray-700 font-medium">Prazo (em dias):</label>
-      <input type="number" id="prazo" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none">
-    </div>
-
-    <button onclick="calcularDatas()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors">Calcular</button>
-
-    <div id="resultado" class="mt-6 text-gray-700 space-y-1"></div>
-  </div>
-
-  <script>
-    const feriados = ["2025-06-19", "2025-06-20"];
-
-    function isDiaUtil(date) {
-      const diaSemana = date.getDay();
-      const feriado = feriados.includes(date.toISOString().split("T")[0]);
-      return diaSemana !== 0 && diaSemana !== 6 && !feriado;
+<script>
+    function isFeriado(date) {
+        const feriados = ["19/06/2025", "20/06/2025"];
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0');
+        const ano = date.getFullYear();
+        return feriados.includes(`${dia}/${mes}/${ano}`);
     }
 
     function proximoDiaUtil(date) {
-      const novaData = new Date(date);
-      while (!isDiaUtil(novaData)) {
-        novaData.setDate(novaData.getDate() + 1);
-      }
-      return novaData;
-    }
-
-    function calcularDatas() {
-      const dataNotificacao = document.getElementById("dataNotificacao").value;
-      const prazo = parseInt(document.getElementById("prazo").value);
-
-      if (!dataNotificacao || isNaN(prazo)) {
-        alert("Preencha todos os campos!");
-        return;
-      }
-
-      let inicioContagem = new Date(dataNotificacao);
-      inicioContagem.setDate(inicioContagem.getDate() + 1);
-      inicioContagem = proximoDiaUtil(inicioContagem);
-
-      let dataFinal = new Date(inicioContagem);
-      let diasContados = 0;
-      while (diasContados < prazo) {
-        dataFinal.setDate(dataFinal.getDate() + 1);
-        if (isDiaUtil(dataFinal)) {
-          diasContados++;
+        while (date.getDay() === 0 || date.getDay() === 6 || isFeriado(date)) {
+            date.setDate(date.getDate() + 1);
         }
-      }
-
-      let dataOcorrencia = new Date(dataFinal);
-      dataOcorrencia.setDate(dataOcorrencia.getDate() + 1);
-      dataOcorrencia = proximoDiaUtil(dataOcorrencia);
-
-      document.getElementById("resultado").innerHTML = `
-        <p><strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString("pt-BR")}</p>
-        <p><strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString("pt-BR")}</p>
-        <p><strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString("pt-BR")}</p>
-      `;
+        return date;
     }
-  </script>
 
-</body>
-</html>
+    function calcular() {
+        const dataNotificacao = new Date(document.getElementById("data").value);
+        let prazo = parseInt(document.getElementById("prazo").value);
+
+        // Início da contagem
+        let inicioContagem = new Date(dataNotificacao);
+        inicioContagem.setDate(inicioContagem.getDate() + 1);
+        inicioContagem = proximoDiaUtil(inicioContagem);
+
+        // Data final
+        let dataFinal = new Date(inicioContagem);
+        let diasAdicionados = 0;
+        while (diasAdicionados < prazo) {
+            dataFinal.setDate(dataFinal.getDate() + 1);
+            if (dataFinal.getDay() !== 0 && dataFinal.getDay() !== 6 && !isFeriado(dataFinal)) {
+                diasAdicionados++;
+            }
+        }
+
+        // Data ocorrência = 3 dias úteis após dataFinal
+        let dataOcorrencia = new Date(dataFinal);
+        let uteis = 0;
+        while (uteis < 3) {
+            dataOcorrencia.setDate(dataOcorrencia.getDate() + 1);
+            if (dataOcorrencia.getDay() !== 0 && dataOcorrencia.getDay() !== 6 && !isFeriado(dataOcorrencia)) {
+                uteis++;
+            }
+        }
+
+        document.getElementById("resultado").innerHTML =
+            `<strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}<br>` +
+            `<strong>Data Fin
