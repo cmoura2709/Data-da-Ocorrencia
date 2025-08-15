@@ -1,145 +1,200 @@
-<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Data da Ocorrência</title>
-<style>
+  <meta charset="UTF-8">
+  <title>Data da Ocorrência - Recusa de Informações</title>
+  <style>
+    /* Fonte moderna */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
     body {
-        font-family: Arial, sans-serif;
-        background-image: url('https://scontent-gru1-2.xx.fbcdn.net/v/t39.30808-6/475080757_9211991242194430_744827647722394597_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=_xs3GRSfUaoQ7kNvwFQQS2U&_nc_oc=AdnCjH9ZVpJLJ1ZKet684wB29vXKTHtqHTCb3lR4JpGOyHvxUQ7LdMqJY7di0cD3I1s&_nc_zt=23&_nc_ht=scontent-gru1-2.xx&_nc_gid=yB91QrFowGk1-nn1WjUaJQ&oh=00_AfX7hwD94HOs1_fRuhsXHBuBK7Xm4OlGXOPSpAMT_QVlCw&oe=68A57679');
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f0f4ff, #d9e4ff);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
-    .container {
-        background-color: rgba(255, 255, 255, 0.95);
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        width: 400px;
-        text-align: center;
+
+    .card {
+      background: white;
+      max-width: 450px;
+      width: 100%;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      animation: fadeIn 0.6s ease-in-out;
     }
-    header {
-        background: linear-gradient(to bottom, #1a4f8b, #87cefa);
-        background-size: cover;
-        background-position: center;
-        padding: 30px;
-        border-radius: 15px 15px 0 0;
-        color: white;
+
+    h1 {
+      font-size: 1.4rem;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #1a1a1a;
     }
-    header h1 {
-        margin: 0;
-        font-size: 26px;
-    }
-    header h2 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: normal;
-    }
+
     label {
-        font-weight: bold;
-        display: block;
-        margin-top: 15px;
+      font-weight: 600;
+      color: #333;
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 6px;
     }
-    input {
-        padding: 8px;
-        width: calc(100% - 20px);
-        margin-top: 5px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
+
+    input[type="date"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s ease-in-out;
     }
+
+    input:focus {
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+      outline: none;
+    }
+
     button {
-        background-color: #1a4f8b;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        margin-top: 15px;
-        cursor: pointer;
-        font-size: 14px;
+      width: 100%;
+      padding: 12px;
+      background-color: #4a90e2;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background-color 0.2s ease-in-out, transform 0.1s;
     }
+
     button:hover {
       background-color: #3a78c2;
       transform: scale(1.02);
     }
-    .result {
-        margin-top: 20px;
-        text-align: left;
+
+    #resultado {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8faff;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #1a1a1a;
+      border: 1px solid #d6e0ff;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: slideUp 0.4s ease forwards;
     }
-    .result strong {
-        display: block;
-        margin-top: 5px;
+
+    strong {
+      color: #4a90e2;
     }
-</style>
+
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Data da Ocorrência</h1>
-            <h2>(Recusa de Informações)</h2>
-        </header>
-        <label for="data">Data da Notificação:</label>
-        <input type="date" id="data">
-        <label for="prazo">Prazo (em dias):</label>
-        <input type="number" id="prazo">
-        <button onclick="calcular()">Calcular</button>
-        <div class="result" id="resultado"></div>
-    </div>
+  <div class="card">
+    <h1>Data da Ocorrência - Recusa de Informações</h1>
 
-<script>
-    function isFeriado(date) {
-        const feriados = ["19/06/2025", "20/06/2025"];
-        const dia = String(date.getDate()).padStart(2, '0');
-        const mes = String(date.getMonth() + 1).padStart(2, '0');
-        const ano = date.getFullYear();
-        return feriados.includes(`${dia}/${mes}/${ano}`);
-    }
+    <label for="notificacao">Data da Notificação:</label>
+    <input type="date" id="notificacao">
 
-    function proximoDiaUtil(date) {
-        while (date.getDay() === 0 || date.getDay() === 6 || isFeriado(date)) {
-            date.setDate(date.getDate() + 1);
-        }
-        return date;
-    }
+    <label for="prazo">Prazo (em dias):</label>
+    <input type="number" id="prazo" min="1">
+
+    <button onclick="calcular()">Calcular</button>
+
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    let feriados = [];
+
+    const fromInputDate = (s) => {
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+
+    const parseDataBR = (s) => {
+      const [d, m, y] = s.split('/').map(Number);
+      return new Date(y, m - 1, d);
+    };
+
+    const sameYMD = (a, b) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+
+    const stripTime = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    const addDays = (d, n) => {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      x.setDate(x.getDate() + n);
+      return x;
+    };
+
+    const ehDiaUtil = (data) => {
+      const d = stripTime(data);
+      const dow = d.getDay();
+      if (dow === 0 || dow === 6) return false;
+      return !feriados.some(f => sameYMD(f, d));
+    };
+
+    const proximoDiaUtil = (data) => {
+      let d = addDays(data, 1);
+      while (!ehDiaUtil(d)) d = addDays(d, 1);
+      return d;
+    };
+
+    fetch('Feriados.json')
+      .then(r => r.json())
+      .then(arr => { feriados = arr.map(parseDataBR); })
+      .catch(err => console.error('Erro ao carregar Feriados.json:', err));
 
     function calcular() {
-        const dataNotificacao = new Date(document.getElementById("data").value);
-        let prazo = parseInt(document.getElementById("prazo").value);
+      const notificacaoVal = document.getElementById('notificacao').value;
+      const prazo = parseInt(document.getElementById('prazo').value, 10);
+      const out = document.getElementById('resultado');
 
-        // Início da contagem
-        let inicioContagem = new Date(dataNotificacao);
-        inicioContagem.setDate(inicioContagem.getDate() + 1);
-        inicioContagem = proximoDiaUtil(inicioContagem);
+      if (!notificacaoVal || isNaN(prazo) || prazo < 1) {
+        out.innerHTML = `<span style="color:red;">Preencha todos os campos corretamente.</span>`;
+        out.style.opacity = 1;
+        return;
+      }
 
-        // Data final
-        let dataFinal = new Date(inicioContagem);
-        let diasAdicionados = 0;
-        while (diasAdicionados < prazo) {
-            dataFinal.setDate(dataFinal.getDate() + 1);
-            if (dataFinal.getDay() !== 0 && dataFinal.getDay() !== 6 && !isFeriado(dataFinal)) {
-                diasAdicionados++;
-            }
-        }
+      const dataNotificacao = fromInputDate(notificacaoVal);
+      const inicioContagem = proximoDiaUtil(dataNotificacao);
 
-        // Data ocorrência = 3 dias úteis após dataFinal
-        let dataOcorrencia = new Date(dataFinal);
-        let uteis = 0;
-        while (uteis < 3) {
-            dataOcorrencia.setDate(dataOcorrencia.getDate() + 1);
-            if (dataOcorrencia.getDay() !== 0 && dataOcorrencia.getDay() !== 6 && !isFeriado(dataOcorrencia)) {
-                uteis++;
-            }
-        }
+      let dataFinal = addDays(inicioContagem, prazo);
+      if (!ehDiaUtil(dataFinal)) {
+        dataFinal = proximoDiaUtil(dataFinal);
+      }
 
-        document.getElementById("resultado").innerHTML =
-            `<strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}<br>` +
-            `<strong>Data Fin
+      const dataOcorrencia = addDays(dataFinal, 1);
 
-
-
-
-
-
+      out.innerHTML = `
+        <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}<br>
+        <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString('pt-BR')}<br>
+        <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString('pt-BR')}
+      `;
+      out.style.animation = "none"; // reset animação
+      void out.offsetWidth; // reflow para reiniciar
+      out.style.animation = "slideUp 0.4s ease forwards";
+    }
+  </script>
+</body>
+</html>
