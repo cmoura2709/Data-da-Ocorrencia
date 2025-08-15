@@ -3,14 +3,9 @@
   <meta charset="UTF-8">
   <title>Data da Ocorrência - Recusa de Informações</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    label, input, button {
-      display: block;
-      margin-bottom: 10px;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label, input, button { display: block; margin-bottom: 10px; }
+    strong { display:block; }
   </style>
 </head>
 <body>
@@ -20,7 +15,7 @@
   <input type="date" id="notificacao">
 
   <label for="prazo">Prazo (em dias):</label>
-  <input type="number" id="prazo">
+  <input type="number" id="prazo" min="1">
 
   <button onclick="calcular()">Calcular</button>
 
@@ -29,79 +24,81 @@
   <script>
     let feriados = [];
 
-    // Função para converter "DD/MM/YYYY" em Date
-    function parseDataBR(dataStr) {
-      const [dia, mes, ano] = dataStr.split("/");
-      return new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
-    }
+    // -------- Utilidades de data (sempre em horário local, sem UTC) --------
+    const fromInputDate = (s) => { // "YYYY-MM-DD" -> Date local
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
 
-    // Carrega os feriados do JSON
+    const parseDataBR = (s) => { // "DD/MM/YYYY" -> Date local
+      const [d, m, y] = s.split('/').map(Number);
+      return new Date(y, m - 1, d);
+    };
+
+    const sameYMD = (a, b) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+
+    const stripTime = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    const addDays = (d, n) => {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      x.setDate(x.getDate() + n);
+      return x;
+    };
+
+    const ehDiaUtil = (data) => {
+      const d = stripTime(data);
+      const dow = d.getDay(); // 0 dom, 6 sáb
+      if (dow === 0 || dow === 6) return false;
+      return !feriados.some(f => sameYMD(f, d));
+    };
+
+    const proximoDiaUtil = (data) => {
+      // sempre vai para a PRÓXIMA data útil (não retorna o mesmo dia)
+      let d = addDays(data, 1);
+      while (!ehDiaUtil(d)) d = addDays(d, 1);
+      return d;
+    };
+
+    // -------- Carrega feriados do JSON (DD/MM/YYYY) --------
     fetch('Feriados.json')
-      .then(response => response.json())
-      .then(data => {
-        feriados = data.map(f => parseDataBR(f));
-      })
-      .catch(error => console.error("Erro ao carregar Feriados.json:", error));
+      .then(r => r.json())
+      .then(arr => { feriados = arr.map(parseDataBR); })
+      .catch(err => console.error('Erro ao carregar Feriados.json:', err));
 
-    // Verifica se é dia útil
-    function ehDiaUtil(data) {
-      const diaSemana = data.getDay(); // 0 = domingo, 6 = sábado
-      const dataFormatada = new Date(data.getFullYear(), data.getMonth(), data.getDate());
-
-      if (diaSemana === 0 || diaSemana === 6) return false;
-      if (feriados.some(f => f.getTime() === dataFormatada.getTime())) return false;
-
-      return true;
-    }
-
-    // Retorna o próximo dia útil após a data informada
-    function proximoDiaUtil(data) {
-      let novaData = new Date(data);
-      do {
-        novaData.setDate(novaData.getDate() + 1);
-      } while (!ehDiaUtil(novaData));
-      return novaData;
-    }
-
+    // ------------------- Regra de cálculo -------------------
     function calcular() {
-      const notificacaoInput = document.getElementById("notificacao").value;
-      const prazo = parseInt(document.getElementById("prazo").value);
-      const resultado = document.getElementById("resultado");
+      const notificacaoVal = document.getElementById('notificacao').value;
+      const prazo = parseInt(document.getElementById('prazo').value, 10);
+      const out = document.getElementById('resultado');
 
-      if (!notificacaoInput || isNaN(prazo)) {
-        resultado.textContent = "Preencha todos os campos corretamente.";
+      if (!notificacaoVal || isNaN(prazo) || prazo < 1) {
+        out.textContent = 'Preencha todos os campos corretamente.';
         return;
       }
 
-      const dataNotificacao = new Date(notificacaoInput);
-
-      // 1️⃣ Data de Início da Contagem (próximo dia útil)
+      // Início da contagem = próximo dia útil após a notificação
+      const dataNotificacao = fromInputDate(notificacaoVal);
       const inicioContagem = proximoDiaUtil(dataNotificacao);
 
-      // 2️⃣ Data Final (conta apenas dias úteis)
-      let dataFinal = new Date(inicioContagem);
-      let diasContados = 0;
-      while (diasContados < prazo) {
-        dataFinal.setDate(dataFinal.getDate() + 1);
-        if (ehDiaUtil(dataFinal)) {
-          diasContados++;
-        }
+      // Prazo em DIAS CORRIDOS, excluindo o dia de início:
+      // base = início + prazo
+      let dataFinal = addDays(inicioContagem, prazo);
+
+      // Ajuste da data final para próximo dia útil (se cair em não-útil)
+      if (!ehDiaUtil(dataFinal)) {
+        dataFinal = proximoDiaUtil(dataFinal);
       }
 
-      // 3️⃣ Ajusta caso a data final caia em dia não útil
-      while (!ehDiaUtil(dataFinal)) {
-        dataFinal.setDate(dataFinal.getDate() + 1);
-      }
+      // Ocorrência = dia subsequente (pode ser útil ou não)
+      const dataOcorrencia = addDays(dataFinal, 1);
 
-      // 4️⃣ Data da Ocorrência (dia seguinte, mesmo se não for útil)
-      let dataOcorrencia = new Date(dataFinal);
-      dataOcorrencia.setDate(dataOcorrencia.getDate() + 1);
-
-      // Exibe tudo
-      resultado.innerHTML = `
-        <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString("pt-BR")}<br>
-        <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString("pt-BR")}<br>
-        <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString("pt-BR")}
+      out.innerHTML = `
+        <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}
+        <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString('pt-BR')}
+        <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString('pt-BR')}
       `;
     }
   </script>
