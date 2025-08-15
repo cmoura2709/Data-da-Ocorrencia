@@ -15,13 +15,14 @@
 </head>
 <body>
   <h1>Data da Ocorrência - Recusa de Informações</h1>
+
   <label for="notificacao">Data da Notificação:</label>
   <input type="date" id="notificacao">
 
   <label for="prazo">Prazo (em dias):</label>
   <input type="number" id="prazo">
 
-  <button onclick="calcular()">Calcular Data Final</button>
+  <button onclick="calcular()">Calcular</button>
 
   <p id="resultado"></p>
 
@@ -42,15 +43,24 @@
       })
       .catch(error => console.error("Erro ao carregar Feriados.json:", error));
 
-    // Função para verificar se é dia útil
+    // Verifica se é dia útil
     function ehDiaUtil(data) {
       const diaSemana = data.getDay(); // 0 = domingo, 6 = sábado
       const dataFormatada = new Date(data.getFullYear(), data.getMonth(), data.getDate());
 
-      if (diaSemana === 0 || diaSemana === 6) return false; // Fim de semana
-      if (feriados.some(f => f.getTime() === dataFormatada.getTime())) return false; // Feriado
+      if (diaSemana === 0 || diaSemana === 6) return false;
+      if (feriados.some(f => f.getTime() === dataFormatada.getTime())) return false;
 
       return true;
+    }
+
+    // Retorna o próximo dia útil após a data informada
+    function proximoDiaUtil(data) {
+      let novaData = new Date(data);
+      do {
+        novaData.setDate(novaData.getDate() + 1);
+      } while (!ehDiaUtil(novaData));
+      return novaData;
     }
 
     function calcular() {
@@ -63,28 +73,36 @@
         return;
       }
 
-      let data = new Date(notificacaoInput);
+      const dataNotificacao = new Date(notificacaoInput);
 
-      // Começa contando do dia seguinte útil
-      do {
-        data.setDate(data.getDate() + 1);
-      } while (!ehDiaUtil(data));
+      // 1️⃣ Data de Início da Contagem (próximo dia útil)
+      const inicioContagem = proximoDiaUtil(dataNotificacao);
 
-      // Conta o prazo, pulando dias não úteis
-      let diasRestantes = prazo;
-      while (diasRestantes > 0) {
-        data.setDate(data.getDate() + 1);
-        if (ehDiaUtil(data)) {
-          diasRestantes--;
+      // 2️⃣ Data Final (conta apenas dias úteis)
+      let dataFinal = new Date(inicioContagem);
+      let diasContados = 0;
+      while (diasContados < prazo) {
+        dataFinal.setDate(dataFinal.getDate() + 1);
+        if (ehDiaUtil(dataFinal)) {
+          diasContados++;
         }
       }
 
-      // Ajusta caso o último dia não seja útil
-      while (!ehDiaUtil(data)) {
-        data.setDate(data.getDate() + 1);
+      // 3️⃣ Ajusta caso a data final caia em dia não útil
+      while (!ehDiaUtil(dataFinal)) {
+        dataFinal.setDate(dataFinal.getDate() + 1);
       }
 
-      resultado.textContent = `Data final: ${data.toLocaleDateString("pt-BR")}`;
+      // 4️⃣ Data da Ocorrência (dia seguinte, mesmo se não for útil)
+      let dataOcorrencia = new Date(dataFinal);
+      dataOcorrencia.setDate(dataOcorrencia.getDate() + 1);
+
+      // Exibe tudo
+      resultado.innerHTML = `
+        <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString("pt-BR")}<br>
+        <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString("pt-BR")}<br>
+        <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString("pt-BR")}
+      `;
     }
   </script>
 </body>
