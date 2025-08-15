@@ -3,93 +3,111 @@
   <meta charset="UTF-8">
   <title>Data da Ocorrência - Recusa de Informações</title>
   <style>
+    /* Fonte moderna */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background-color: #f4f6f8;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f0f4ff, #d9e4ff);
       margin: 0;
       padding: 0;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       min-height: 100vh;
     }
 
-    .container {
+    .card {
       background: white;
-      max-width: 500px;
+      max-width: 450px;
       width: 100%;
-      margin-top: 50px;
-      padding: 25px 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      animation: fadeIn 0.6s ease-in-out;
     }
 
     h1 {
       font-size: 1.4rem;
       text-align: center;
       margin-bottom: 20px;
-      color: #333;
+      color: #1a1a1a;
     }
 
     label {
       font-weight: 600;
-      color: #555;
-      margin-top: 10px;
+      color: #333;
       display: block;
+      margin-top: 10px;
+      margin-bottom: 6px;
     }
 
     input[type="date"],
     input[type="number"] {
       width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 15px;
+      padding: 10px 12px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 0.95rem;
-      transition: border 0.2s ease-in-out;
+      transition: all 0.2s ease-in-out;
     }
 
     input:focus {
-      border-color: #007bff;
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
       outline: none;
     }
 
     button {
       width: 100%;
       padding: 12px;
-      background-color: #007bff;
+      background-color: #4a90e2;
       border: none;
       border-radius: 8px;
       font-size: 1rem;
       font-weight: bold;
       color: white;
       cursor: pointer;
-      transition: background-color 0.2s ease-in-out;
+      margin-top: 15px;
+      transition: background-color 0.2s ease-in-out, transform 0.1s;
     }
 
     button:hover {
-      background-color: #0056b3;
+      background-color: #3a78c2;
+      transform: scale(1.02);
     }
 
     #resultado {
       margin-top: 20px;
       padding: 15px;
-      background-color: #f8f9fa;
+      background-color: #f8faff;
       border-radius: 8px;
       font-size: 0.95rem;
       line-height: 1.5;
-      color: #333;
-      border: 1px solid #e0e0e0;
+      color: #1a1a1a;
+      border: 1px solid #d6e0ff;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: slideUp 0.4s ease forwards;
     }
 
     strong {
-      color: #007bff;
+      color: #4a90e2;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="card">
     <h1>Data da Ocorrência - Recusa de Informações</h1>
 
     <label for="notificacao">Data da Notificação:</label>
@@ -154,6 +172,7 @@
 
       if (!notificacaoVal || isNaN(prazo) || prazo < 1) {
         out.innerHTML = `<span style="color:red;">Preencha todos os campos corretamente.</span>`;
+        out.style.opacity = 1;
         return;
       }
 
@@ -172,6 +191,9 @@
         <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString('pt-BR')}<br>
         <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString('pt-BR')}
       `;
+      out.style.animation = "none"; // reset animação
+      void out.offsetWidth; // reflow para reiniciar
+      out.style.animation = "slideUp 0.4s ease forwards";
     }
   </script>
 </body>
