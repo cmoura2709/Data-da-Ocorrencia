@@ -3,34 +3,115 @@
   <meta charset="UTF-8">
   <title>Data da Ocorrência - Recusa de Informações</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    label, input, button { display: block; margin-bottom: 10px; }
-    strong { display:block; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      max-width: 500px;
+      width: 100%;
+      margin-top: 50px;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    label {
+      font-weight: 600;
+      color: #555;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input[type="date"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: border 0.2s ease-in-out;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #resultado {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #333;
+      border: 1px solid #e0e0e0;
+    }
+
+    strong {
+      color: #007bff;
+    }
   </style>
 </head>
 <body>
-  <h1>Data da Ocorrência - Recusa de Informações</h1>
+  <div class="container">
+    <h1>Data da Ocorrência - Recusa de Informações</h1>
 
-  <label for="notificacao">Data da Notificação:</label>
-  <input type="date" id="notificacao">
+    <label for="notificacao">Data da Notificação:</label>
+    <input type="date" id="notificacao">
 
-  <label for="prazo">Prazo (em dias):</label>
-  <input type="number" id="prazo" min="1">
+    <label for="prazo">Prazo (em dias):</label>
+    <input type="number" id="prazo" min="1">
 
-  <button onclick="calcular()">Calcular</button>
+    <button onclick="calcular()">Calcular</button>
 
-  <p id="resultado"></p>
+    <div id="resultado"></div>
+  </div>
 
   <script>
     let feriados = [];
 
-    // -------- Utilidades de data (sempre em horário local, sem UTC) --------
-    const fromInputDate = (s) => { // "YYYY-MM-DD" -> Date local
+    const fromInputDate = (s) => {
       const [y, m, d] = s.split('-').map(Number);
       return new Date(y, m - 1, d);
     };
 
-    const parseDataBR = (s) => { // "DD/MM/YYYY" -> Date local
+    const parseDataBR = (s) => {
       const [d, m, y] = s.split('/').map(Number);
       return new Date(y, m - 1, d);
     };
@@ -50,54 +131,45 @@
 
     const ehDiaUtil = (data) => {
       const d = stripTime(data);
-      const dow = d.getDay(); // 0 dom, 6 sáb
+      const dow = d.getDay();
       if (dow === 0 || dow === 6) return false;
       return !feriados.some(f => sameYMD(f, d));
     };
 
     const proximoDiaUtil = (data) => {
-      // sempre vai para a PRÓXIMA data útil (não retorna o mesmo dia)
       let d = addDays(data, 1);
       while (!ehDiaUtil(d)) d = addDays(d, 1);
       return d;
     };
 
-    // -------- Carrega feriados do JSON (DD/MM/YYYY) --------
     fetch('Feriados.json')
       .then(r => r.json())
       .then(arr => { feriados = arr.map(parseDataBR); })
       .catch(err => console.error('Erro ao carregar Feriados.json:', err));
 
-    // ------------------- Regra de cálculo -------------------
     function calcular() {
       const notificacaoVal = document.getElementById('notificacao').value;
       const prazo = parseInt(document.getElementById('prazo').value, 10);
       const out = document.getElementById('resultado');
 
       if (!notificacaoVal || isNaN(prazo) || prazo < 1) {
-        out.textContent = 'Preencha todos os campos corretamente.';
+        out.innerHTML = `<span style="color:red;">Preencha todos os campos corretamente.</span>`;
         return;
       }
 
-      // Início da contagem = próximo dia útil após a notificação
       const dataNotificacao = fromInputDate(notificacaoVal);
       const inicioContagem = proximoDiaUtil(dataNotificacao);
 
-      // Prazo em DIAS CORRIDOS, excluindo o dia de início:
-      // base = início + prazo
       let dataFinal = addDays(inicioContagem, prazo);
-
-      // Ajuste da data final para próximo dia útil (se cair em não-útil)
       if (!ehDiaUtil(dataFinal)) {
         dataFinal = proximoDiaUtil(dataFinal);
       }
 
-      // Ocorrência = dia subsequente (pode ser útil ou não)
       const dataOcorrencia = addDays(dataFinal, 1);
 
       out.innerHTML = `
-        <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}
-        <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString('pt-BR')}
+        <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}<br>
+        <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString('pt-BR')}<br>
         <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString('pt-BR')}
       `;
     }
