@@ -1,200 +1,82 @@
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Data da Ocorrência - Recusa de Informações</title>
-  <style>
-    /* Fonte moderna */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #f0f4ff, #d9e4ff);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .card {
-      background: white;
-      max-width: 450px;
-      width: 100%;
-      padding: 25px;
-      border-radius: 16px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-      animation: fadeIn 0.6s ease-in-out;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      text-align: center;
-      margin-bottom: 20px;
-      color: #1a1a1a;
-    }
-
-    label {
-      font-weight: 600;
-      color: #333;
-      display: block;
-      margin-top: 10px;
-      margin-bottom: 6px;
-    }
-
-    input[type="date"],
-    input[type="number"] {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      transition: all 0.2s ease-in-out;
-    }
-
-    input:focus {
-      border-color: #4a90e2;
-      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
-      outline: none;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #4a90e2;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      color: white;
-      cursor: pointer;
-      margin-top: 15px;
-      transition: background-color 0.2s ease-in-out, transform 0.1s;
-    }
-
-    button:hover {
-      background-color: #3a78c2;
-      transform: scale(1.02);
-    }
-
-    #resultado {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f8faff;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      color: #1a1a1a;
-      border: 1px solid #d6e0ff;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: slideUp 0.4s ease forwards;
-    }
-
-    strong {
-      color: #4a90e2;
-    }
-
-    /* Animações */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes slideUp {
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data da Ocorrência</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div class="card">
-    <h1>Data da Ocorrência - Recusa de Informações</h1>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
-    <label for="notificacao">Data da Notificação:</label>
-    <input type="date" id="notificacao">
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg">
+    <h1 class="text-3xl font-bold text-gray-800 text-center">Data da Ocorrência</h1>
+    <p class="text-lg text-gray-500 mb-6 text-center">(Recusa de Informações)</p>
 
-    <label for="prazo">Prazo (em dias):</label>
-    <input type="number" id="prazo" min="1">
+    <div class="mb-4">
+      <label class="block text-gray-700 font-medium">Data da Notificação:</label>
+      <input type="date" id="dataNotificacao" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+    </div>
 
-    <button onclick="calcular()">Calcular</button>
+    <div class="mb-4">
+      <label class="block text-gray-700 font-medium">Prazo (em dias):</label>
+      <input type="number" id="prazo" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+    </div>
 
-    <div id="resultado"></div>
+    <button onclick="calcularDatas()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors">Calcular</button>
+
+    <div id="resultado" class="mt-6 text-gray-700 space-y-1"></div>
   </div>
 
   <script>
-    let feriados = [];
+    const feriados = ["2025-06-19", "2025-06-20"];
 
-    const fromInputDate = (s) => {
-      const [y, m, d] = s.split('-').map(Number);
-      return new Date(y, m - 1, d);
-    };
+    function isDiaUtil(date) {
+      const diaSemana = date.getDay();
+      const feriado = feriados.includes(date.toISOString().split("T")[0]);
+      return diaSemana !== 0 && diaSemana !== 6 && !feriado;
+    }
 
-    const parseDataBR = (s) => {
-      const [d, m, y] = s.split('/').map(Number);
-      return new Date(y, m - 1, d);
-    };
+    function proximoDiaUtil(date) {
+      const novaData = new Date(date);
+      while (!isDiaUtil(novaData)) {
+        novaData.setDate(novaData.getDate() + 1);
+      }
+      return novaData;
+    }
 
-    const sameYMD = (a, b) =>
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate();
+    function calcularDatas() {
+      const dataNotificacao = document.getElementById("dataNotificacao").value;
+      const prazo = parseInt(document.getElementById("prazo").value);
 
-    const stripTime = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-    const addDays = (d, n) => {
-      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      x.setDate(x.getDate() + n);
-      return x;
-    };
-
-    const ehDiaUtil = (data) => {
-      const d = stripTime(data);
-      const dow = d.getDay();
-      if (dow === 0 || dow === 6) return false;
-      return !feriados.some(f => sameYMD(f, d));
-    };
-
-    const proximoDiaUtil = (data) => {
-      let d = addDays(data, 1);
-      while (!ehDiaUtil(d)) d = addDays(d, 1);
-      return d;
-    };
-
-    fetch('Feriados.json')
-      .then(r => r.json())
-      .then(arr => { feriados = arr.map(parseDataBR); })
-      .catch(err => console.error('Erro ao carregar Feriados.json:', err));
-
-    function calcular() {
-      const notificacaoVal = document.getElementById('notificacao').value;
-      const prazo = parseInt(document.getElementById('prazo').value, 10);
-      const out = document.getElementById('resultado');
-
-      if (!notificacaoVal || isNaN(prazo) || prazo < 1) {
-        out.innerHTML = `<span style="color:red;">Preencha todos os campos corretamente.</span>`;
-        out.style.opacity = 1;
+      if (!dataNotificacao || isNaN(prazo)) {
+        alert("Preencha todos os campos!");
         return;
       }
 
-      const dataNotificacao = fromInputDate(notificacaoVal);
-      const inicioContagem = proximoDiaUtil(dataNotificacao);
+      let inicioContagem = new Date(dataNotificacao);
+      inicioContagem.setDate(inicioContagem.getDate() + 1);
+      inicioContagem = proximoDiaUtil(inicioContagem);
 
-      let dataFinal = addDays(inicioContagem, prazo);
-      if (!ehDiaUtil(dataFinal)) {
-        dataFinal = proximoDiaUtil(dataFinal);
+      let dataFinal = new Date(inicioContagem);
+      let diasContados = 0;
+      while (diasContados < prazo) {
+        dataFinal.setDate(dataFinal.getDate() + 1);
+        if (isDiaUtil(dataFinal)) {
+          diasContados++;
+        }
       }
 
-      const dataOcorrencia = addDays(dataFinal, 1);
+      let dataOcorrencia = new Date(dataFinal);
+      dataOcorrencia.setDate(dataOcorrencia.getDate() + 1);
+      dataOcorrencia = proximoDiaUtil(dataOcorrencia);
 
-      out.innerHTML = `
-        <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}<br>
-        <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString('pt-BR')}<br>
-        <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString('pt-BR')}
+      document.getElementById("resultado").innerHTML = `
+        <p><strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString("pt-BR")}</p>
+        <p><strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString("pt-BR")}</p>
+        <p><strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString("pt-BR")}</p>
       `;
-      out.style.animation = "none"; // reset animação
-      void out.offsetWidth; // reflow para reiniciar
-      out.style.animation = "slideUp 0.4s ease forwards";
     }
   </script>
+
 </body>
 </html>
