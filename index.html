@@ -8,7 +8,17 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(to bottom, #1a4f8b, #87cefa);
+
+      /* Fundo com imagem do repositório */
+      background-image: url('Fundo_ANAC.png'); /* ou .jpg se for esse formato */
+      background-size: cover;        /* cobre toda a tela */
+      background-position: center;   /* centraliza */
+      background-repeat: no-repeat;  /* não repete */
+
+      /* Mantendo gradiente se quiser efeito de overlay */
+      background-blend-mode: overlay;
+      background-color: rgba(26, 79, 139, 0.6); /* azul semitransparente sobre a imagem */
+
       margin: 0;
       padding: 0;
       display: flex;
@@ -18,7 +28,7 @@
     }
 
     .card {
-      background: white;
+      background: rgba(255, 255, 255, 0.95); /* leve transparência para ver o fundo */
       max-width: 450px;
       width: 100%;
       padding: 25px;
@@ -28,21 +38,18 @@
     }
 
     h1 {
-      font-size: 1.4rem;
-      text-align: center;
-      margin-bottom: 20px;
-      color: #1a1a1a;
-      margin: 0;
       font-size: 26px;
-    }
-    h2 {
-      font-size: 1.4rem;
       text-align: center;
-      margin-bottom: 20px;
+      margin: 0 0 10px 0;
       color: #1a1a1a;
-      margin: 0;
+    }
+
+    h2 {
       font-size: 16px;
+      text-align: center;
+      margin: 0 0 20px 0;
       font-weight: normal;
+      color: #1a1a1a;
     }
 
     label {
@@ -210,12 +217,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
