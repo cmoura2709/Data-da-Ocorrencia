@@ -198,7 +198,7 @@
       const dataNotificacao = fromInputDate(notificacaoVal);
       const inicioContagem = proximoDiaUtil(dataNotificacao);
 
-      let dataFinal = addDays(inicioContagem, prazo);
+      let dataFinal = addDays(inicioContagem, prazo - 1);
       if (!ehDiaUtil(dataFinal)) {
         dataFinal = proximoDiaUtil(dataFinal);
       }
@@ -217,5 +217,6 @@
   </script>
 </body>
 </html>
+
 
 
