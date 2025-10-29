@@ -141,13 +141,21 @@
   </div>
 
   <script>
+    /* =========================
+       Lógica de datas e feriados
+       (substitui somente o script,
+       sem mexer em layout)
+       ========================= */
+
     let feriados = [];
 
+    // converte "yyyy-mm-dd" (input date) para Date (sem hora)
     const fromInputDate = (s) => {
       const [y, m, d] = s.split('-').map(Number);
       return new Date(y, m - 1, d);
     };
 
+    // converte "dd/mm/yyyy" para Date (usado no Feriados.json)
     const parseDataBR = (s) => {
       const [d, m, y] = s.split('/').map(Number);
       return new Date(y, m - 1, d);
@@ -166,22 +174,33 @@
       return x;
     };
 
+    const isWeekend = (d) => {
+      const dow = d.getDay();
+      return dow === 0 || dow === 6;
+    };
+
     const ehDiaUtil = (data) => {
       const d = stripTime(data);
-      const dow = d.getDay();
-      if (dow === 0 || dow === 6) return false;
+      if (isWeekend(d)) return false;
       return !feriados.some(f => sameYMD(f, d));
     };
 
-    const proximoDiaUtil = (data) => {
-      let d = addDays(data, 1);
-      while (!ehDiaUtil(d)) d = addDays(d, 1);
+    // Retorna o próximo dia útil a partir de 'data' inclusive.
+    // Ou seja, se 'data' já for útil, retorna 'data' (não avança 1 a mais).
+    const proximoDiaUtilInclusivo = (data) => {
+      let d = stripTime(data);
+      while (!ehDiaUtil(d)) {
+        d = addDays(d, 1);
+      }
       return d;
     };
 
+    // Carrega feriados (arquivo JSON com ["01/01/2025", ...])
     fetch('Feriados.json')
       .then(r => r.json())
-      .then(arr => { feriados = arr.map(parseDataBR); })
+      .then(arr => {
+        feriados = arr.map(parseDataBR);
+      })
       .catch(err => console.error('Erro ao carregar Feriados.json:', err));
 
     function calcular() {
@@ -195,28 +214,37 @@
         return;
       }
 
-      const dataNotificacao = fromInputDate(notificacaoVal);
-      const inicioContagem = proximoDiaUtil(dataNotificacao);
+      // 1) Ajusta notificação: se cair em fim de semana/feriado, considerar próximo dia útil
+      let dataNotificacao = fromInputDate(notificacaoVal);
+      dataNotificacao = proximoDiaUtilInclusivo(dataNotificacao);
 
+      // 2) Início da contagem = dia subsequente à notificação efetiva (pode ser fim de semana)
+      const inicioContagem = addDays(dataNotificacao, 1);
+
+      // 3) Prazo contado em dias corridos — o primeiro dia é o 'inicioContagem'.
+      // Então a data final é inicioContagem + (prazo - 1)
       let dataFinal = addDays(inicioContagem, prazo - 1);
+
+      // 4) Se dataFinal cair em fim de semana ou feriado → ajustar para próximo dia útil
       if (!ehDiaUtil(dataFinal)) {
-        dataFinal = proximoDiaUtil(dataFinal);
+        dataFinal = proximoDiaUtilInclusivo(dataFinal);
       }
 
+      // 5) Data da ocorrência = dataFinal + 1 dia (sem ajuste)
       const dataOcorrencia = addDays(dataFinal, 1);
 
       out.innerHTML = `
+        <strong>Data de Notificação Efetiva:</strong> ${dataNotificacao.toLocaleDateString('pt-BR')}<br>
         <strong>Data de Início da Contagem:</strong> ${inicioContagem.toLocaleDateString('pt-BR')}<br>
         <strong>Data Final para Apresentação da Resposta:</strong> ${dataFinal.toLocaleDateString('pt-BR')}<br>
         <strong>Data da Ocorrência:</strong> ${dataOcorrencia.toLocaleDateString('pt-BR')}
       `;
-      out.style.animation = "none"; // reset animação
-      void out.offsetWidth; // reflow para reiniciar
+
+      // reinicia animação do resultado (igual ao original)
+      out.style.animation = "none";
+      void out.offsetWidth;
       out.style.animation = "slideUp 0.4s ease forwards";
     }
   </script>
 </body>
 </html>
-
-
-
