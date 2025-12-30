@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -62,6 +63,50 @@
       font-size: 0.95rem;
       transition: all 0.2s ease-in-out;
     }
+    
+    input[type="date"] {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      
+      box-sizing: border-box;
+      height: 44px;
+      padding: 10px 12px;
+      line-height: 24px;
+      
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+    }
+    
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      height: 18px;
+      width: 18px;
+    }
+   
+    input[type="number"] {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      
+      box-sizing: border-box;
+      height: 44px;
+      padding: 10px 12px;
+      line-height: 24px;
+      
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+    }
+    
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
 
     input:focus {
       border-color: #4a90e2;
@@ -114,6 +159,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="card">
     <h1>Data da Ocorrência</h1>
@@ -186,16 +232,39 @@
       }
 
       const dataNotificacao = fromInputDate(notificacaoVal);
+      const dataCorte = new Date(2026, 0, 1); // 01/01/2026
 
-      // Início da contagem = próximo dia útil após a notificação
-      let inicioContagem = ajustarParaProximoUtil(dataNotificacao);
+      let inicioContagem;
+      let dataFinal;
 
-      // Conta dias corridos
-      let dataFinal = addDays(inicioContagem, prazo - 1);
+      /* ===============================
+         NOVA REGRA (>= 01/01/2026)
+         =============================== */
+      if (dataNotificacao >= dataCorte) {
 
-      // Ajusta final para dia útil
-      while (!ehDiaUtil(dataFinal)) {
-        dataFinal = addDays(dataFinal, 1);
+        inicioContagem = ajustarParaProximoUtil(dataNotificacao);
+
+        let diasUteisContados = 1;
+        dataFinal = inicioContagem;
+
+        while (diasUteisContados < prazo) {
+          dataFinal = addDays(dataFinal, 1);
+          if (ehDiaUtil(dataFinal)) {
+            diasUteisContados++;
+          }
+        }
+
+      /* ===============================
+         REGRA ATUAL (<= 31/12/2025)
+         =============================== */
+      } else {
+
+        inicioContagem = ajustarParaProximoUtil(dataNotificacao);
+        dataFinal = addDays(inicioContagem, prazo - 1);
+
+        while (!ehDiaUtil(dataFinal)) {
+          dataFinal = addDays(dataFinal, 1);
+        }
       }
 
       const dataOcorrencia = addDays(dataFinal, 1);
